@@ -1,12 +1,60 @@
 emails-workflow
 ==
 
+Simple workflow to collate useful information for the day ahead and email it to me.
+
 | who       | what |
 |-----------|------|
 | dockerhub | https://hub.docker.com/r/jspc/emails-workflow/   |
 | circleci  | https://circleci.com/gh/jspc/emails-workflow   |
 | licence   | MIT   |
 
+
+Running
+--
+
+This package provides a customised `JobManager`, as set out in https://github.com/gincorp/sample-job-runner
+
+It relies on some env vars:
+
+```bash
+$ export OWM_API_KEY='djdjdjdjdj'        # A relic from https://github.com/briandowns/openweathermap
+$ export MAIL_USERNAME='foo'             # username with which to connect to mail server
+$ export MAIL_PASSWORD='bar'             # password for the same
+```
+
+It is run like any gin command:
+
+```
+$ ./emails-workflow -h
+Usage of ./emails-workflow:
+  -amqp string
+        URI to pass messages via (default "amqp://guest:guest@localhost:5671/")
+```
+
+Configuration
+--
+
+Workflow creation lives in `script/wf.go` and relies on two env vars being set:
+
+```bash
+$ export SENDER_ADDRESS=me@example.com            # From address on email
+$ export RECEIPIENT_ADDRESS=someone@example.com   # To address on email
+```
+
+It *can* be compiled and run:
+
+```bash
+$ cd script/
+$ go build
+$ ./script
+```
+
+But this leads to an absurdity in the name and will muck up if more scripts are added. Thus:
+
+```bash
+$ go run script/wf.go
+```
 
 Licence
 --
@@ -32,4 +80,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
