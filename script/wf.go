@@ -1,8 +1,28 @@
+// Copyright 2016, gincorp.
+//
+// This project is under the MIT licence;
+// found in LICENCE.md in the parent directory.
+//
+// This script is expected to be run via go run wf.go
+// It configures a simple workflow designed to be run with the
+// job manager implemenetation in the parent directory.
+//
+//
+// This workflow will compile certain interesting bits of info:
+// weather forecasts, news headlines, exchange rates. It'll then
+// email this information to a comfigured email address.
+//
+// ENV Vars:
+// SENDER_ADDRESS=''     - the sender address on an email
+// RECEIPIENT_ADDRESS='' - the receipient of the email
+
 package main
 
 import (
 	"flag"
 	"log"
+	"os"
+	"strings"
 
 	"github.com/gincorp/gin/datastore"
 	"github.com/gincorp/gin/workflow"
