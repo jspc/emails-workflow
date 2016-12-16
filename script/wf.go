@@ -43,63 +43,67 @@ func main() {
 		panic(err)
 	}
 
-	log.Print(d.SaveWorkflow(postToEchoServer(), true))
-	log.Print(d.SaveWorkflow(postToEchoServerAndLog(), true))
+	log.Print(d.SaveWorkflow(sendDailyEmail(), true))
 }
 
-func postToEchoServer() workflow.Workflow {
-	// Make a request against https://hub.docker.com/r/jspc/go-echo-http-server/
+func sendDailyEmail() workflow.Workflow {
+	// Grab some information about some stuff, email it
 
 	vars := make(map[string]string)
+	vars["location"] = "London,uk"
+	vars["mail_host"] = "smtp.gmail.com"
+	vars["mail_port"] = "587"
+	vars["mail_from"] = os.Getenv("SENDER_ADDRESS")
+	vars["mail_to"] = os.Getenv("RECEIPIENT_ADDRESS")
 
-	// hyphens in variable keys messes up text/template, which parses
-	// context values below
-	vars["echo_url"] = "http://localhost:8000/some-endpoint"
-	vars["content_type"] = "application/json"
-
-	return workflow.Workflow{
-		Name:      "Post to Echo Server",
-		Variables: vars,
-		Steps: []workflow.Step{
-			workflow.Step{
-				Name: "Make Request",
-				Type: "post-to-web",
-				Context: map[string]string{
-					"url":          "{{.Defaults.echo_url}}",
-					"content-type": "{{.Defaults.content_type}}",
-				},
-				Register: "echo_data"},
-		},
+	emailBody := []string{
+		"Greetings,",
+		"",
+		"Weather today in {{.Defaults.location}}:",
+		"Minimum: {{.weather.minimum}} celsius",
+		"Maximum: {{.weather.maximum}} celsius",
+		"",
+		"Regards,",
+		"gin",
 	}
-}
-
-func postToEchoServerAndLog() workflow.Workflow {
-	// Make a request against https://hub.docker.com/r/jspc/go-echo-http-server/
-	// Log the output
-
-	vars := make(map[string]string)
-
-	vars["echo_url"] = "http://localhost:8000/some-endpoint"
-	vars["content_type"] = "application/json"
 
 	return workflow.Workflow{
-		Name:      "Post and Log Echo Server",
+		Name:      "Send daily email",
 		Variables: vars,
 		Steps: []workflow.Step{
 			workflow.Step{
-				Name: "Make Request",
-				Type: "post-to-web",
+				Name: "Get Weather",
+				Type: "get-day-temperature",
 				Context: map[string]string{
-					"url":          "{{.Defaults.echo_url}}",
-					"content-type": "{{.Defaults.content_type}}",
+					"location": "{{.Defaults.location}}",
 				},
-				Register: "echo_data"},
+				Register: "weather",
+			},
 			workflow.Step{
-				Name: "Log Output",
+				Name: "Log Minimum",
 				Type: "log",
 				Context: map[string]string{
-					// Note: there are workarounds for hyphenated keys, as below
-					"message": "user agent set to: {{index .echo_data.Headers \"User-Agent\"}}",
+					"message": "Minimum Temperature: {{ .weather.minimum }}",
+				},
+			},
+			workflow.Step{
+				Name: "Log Maximum",
+				Type: "log",
+				Context: map[string]string{
+					"message": "Maximum Temperature: {{ .weather.maximum }}",
+				},
+			},
+			workflow.Step{
+				Name: "Send Email",
+				Type: "send-email",
+				Context: map[string]string{
+					"host": "{{ .Defaults.mail_host }}",
+					"port": "{{ .Defaults.mail_port }}",
+
+					"from":    "{{ .Defaults.mail_from }}",
+					"to":      "{{ .Defaults.mail_to }}",
+					"subject": "Daily Update Email",
+					"body":    strings.Join(emailBody[:], "\r\n"),
 				},
 			},
 		},
