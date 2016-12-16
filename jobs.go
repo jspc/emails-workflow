@@ -29,9 +29,44 @@ func getLondonWeather(jn taskmanager.JobNotification) (output map[string]interfa
 }
 
 func sendEmail(jn taskmanager.JobNotification) (output map[string]interface{}, err error) {
-    username := context["username"]
-    password := context["password"]
-    mailhost := context["mailhost"]
+	// Hat tip: https://gist.github.com/andelf/5004821
+	username := os.Getenv("MAIL_USERNAME")
+	password := os.Getenv("MAIL_PASSWORD")
+	mailhost := jn.Context["host"]
+	mailport := jn.Context["port"]
 
-    // send email
+	auth := smtp.PlainAuth("",
+		username,
+		password,
+		mailhost,
+	)
+
+	from := mail.Address{"gin", jn.Context["from"]}
+	to := mail.Address{"", jn.Context["to"]}
+
+	header := make(map[string]string)
+
+	header["From"] = from.String()
+	header["To"] = to.String()
+	header["Subject"] = jn.Context["subject"]
+	header["MIME-Version"] = "1.0"
+	header["Content-Type"] = "text/plain; charset=\"utf-8\""
+	header["Content-Transfer-Encoding"] = "base64"
+
+	message := ""
+	for k, v := range header {
+		message += fmt.Sprintf("%s: %s\r\n", k, v)
+	}
+	message += "\r\n" + base64.StdEncoding.EncodeToString([]byte(jn.Context["body"]))
+
+	err = smtp.SendMail(
+		mailhost+":"+mailport,
+		auth,
+		from.Address,
+		[]string{to.Address},
+		[]byte(message),
+	)
+
+	output = make(map[string]interface{})
+	return
 }
