@@ -15,6 +15,7 @@
 // ENV Vars:
 // SENDER_ADDRESS=''     - the sender address on an email
 // RECEIPIENT_ADDRESS='' - the receipient of the email
+// GUARDIAN_API_KEY=''   - the API key to be used against the Guardian api
 
 package main
 
@@ -55,6 +56,7 @@ func sendDailyEmail() workflow.Workflow {
 	vars["mail_port"] = "587"
 	vars["mail_from"] = os.Getenv("SENDER_ADDRESS")
 	vars["mail_to"] = os.Getenv("RECEIPIENT_ADDRESS")
+	vars["guardian_key"] = os.Getenv("GUARDIAN_API_KEY")
 
 	emailBody := []string{
 		"Greetings,",
@@ -62,6 +64,11 @@ func sendDailyEmail() workflow.Workflow {
 		"Weather today in {{.Defaults.location}}:",
 		"Minimum: {{.weather.minimum}} celsius",
 		"Maximum: {{.weather.maximum}} celsius",
+		"",
+		"In the news:",
+		"{{ range .news.articles }}",
+		"{{ .Timestamp }}: {{ .Title }} - {{ .URL }}",
+		"{{ end }}",
 		"",
 		"Regards,",
 		"gin",
@@ -92,6 +99,14 @@ func sendDailyEmail() workflow.Workflow {
 				Context: map[string]string{
 					"message": "Maximum Temperature: {{ .weather.maximum }}",
 				},
+			},
+			workflow.Step{
+				Name: "Get Today's News",
+				Type: "get-news",
+				Context: map[string]string{
+					"apiKey": "{{.Defaults.guardian_key}}",
+				},
+				Register: "news",
 			},
 			workflow.Step{
 				Name: "Send Email",

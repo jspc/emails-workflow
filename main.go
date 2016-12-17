@@ -26,6 +26,7 @@ func main() {
 
 	jobManager := taskmanager.NewJobManager()
 	jobManager.AddJob("get-day-temperature", getLondonWeather)
+	jobManager.AddJob("get-news", getNews)
 	jobManager.AddJob("send-email", sendEmail)
 
 	n.TaskManager = jobManager
