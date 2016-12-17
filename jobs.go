@@ -16,6 +16,10 @@ import (
 	"github.com/gincorp/gin/taskmanager"
 )
 
+type financeitem struct {
+	Name, Price string
+}
+
 type newsitem struct {
 	Timestamp time.Time
 	Title     string
@@ -113,7 +117,45 @@ func getNews(jn taskmanager.JobNotification) (output map[string]interface{}, err
 	sort.Sort(ByTime(newsItems))
 
 	output = make(map[string]interface{})
-	output["articles"] = newsItems[:10]
+	if len(newsItems) > 10 {
+		output["articles"] = newsItems[:10]
+	} else {
+		output["articles"] = newsItems
+	}
+
+	return
+}
+
+func getCurrencyPrices(jn taskmanager.JobNotification) (output map[string]interface{}, err error) {
+	respData, err := apiCall("http://finance.yahoo.com/webservice/v1/symbols/allcurrencies/quote?format=json")
+	if err != nil {
+		return
+	}
+
+	output = make(map[string]interface{})
+	prices := []financeitem{}
+
+	// Somewhere, and I suspect in java world, there's a fucking awful library turning xml into json
+	// by trying to map xml classes/types to a json object. It means stupid shit like this format.
+	//
+	// Seriously: fuck anybody who does this.
+
+	data := respData["list"].(map[string]interface{}) // ITS THE ONLY FUCKING KEY IN THE FUCKING OBJECT
+
+	for _, resource := range data["resources"].([]interface{}) {
+		actualResource := resource.(map[string]interface{})["resource"].(map[string]interface{}) // WANKERS
+		fields := actualResource["fields"].(map[string]interface{})
+
+		switch fields["name"].(string) {
+		case "USD/GBP":
+			prices = append(prices, financeitem{"$/£", fields["price"].(string)})
+		case "USD/EUR":
+			prices = append(prices, financeitem{"$/€", fields["price"].(string)})
+		case "GOLD 1 OZ":
+			prices = append(prices, financeitem{"Gold per ounce", fields["price"].(string)})
+		}
+	}
+	output["prices"] = prices
 
 	return
 }

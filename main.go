@@ -25,6 +25,7 @@ func main() {
 	n := node.NewNode(*amqpURI, "", "job")
 
 	jobManager := taskmanager.NewJobManager()
+	jobManager.AddJob("get-financial", getCurrencyPrices)
 	jobManager.AddJob("get-day-temperature", getLondonWeather)
 	jobManager.AddJob("get-news", getNews)
 	jobManager.AddJob("send-email", sendEmail)
