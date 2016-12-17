@@ -28,6 +28,23 @@ func (t ByTime) Len() int           { return len(t) }
 func (t ByTime) Swap(i, j int)      { t[i], t[j] = t[j], t[i] }
 func (t ByTime) Less(i, j int) bool { return !t[i].Timestamp.Before(t[j].Timestamp) } // Actual do the opposite of Less to order by descending
 
+func apiCall(url string) (d map[string]interface{}, err error) {
+	var resp *http.Response
+
+	if resp, err = http.Get(url); err != nil {
+		return
+	}
+
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(resp.Body)
+	defer resp.Body.Close()
+
+	d = make(map[string]interface{})
+	json.Unmarshal(buf.Bytes(), &d)
+
+	return
+}
+
 func getLondonWeather(jn taskmanager.JobNotification) (output map[string]interface{}, err error) {
 	w, err := owm.NewForecast("C", "en")
 	if err != nil {
@@ -62,23 +79,16 @@ func getNews(jn taskmanager.JobNotification) (output map[string]interface{}, err
 		"world",
 	}
 
-	var resp *http.Response
+	apiKey := jn.Context["apiKey"]
 
 	newsItems := []newsitem{}
 
-	apiKey := jn.Context["apiKey"]
 	for _, section := range sections {
 		// get stuff
-		if resp, err = http.Get(guardianURL(apiKey, date, section)); err != nil {
+		var data map[string]interface{}
+		if data, err = apiCall(guardianURL(apiKey, date, section)); err != nil {
 			return
 		}
-
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(resp.Body)
-		defer resp.Body.Close()
-
-		data := make(map[string]interface{})
-		json.Unmarshal(buf.Bytes(), &data)
 
 		response := data["response"].(map[string]interface{})
 
