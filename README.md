@@ -3,6 +3,9 @@ emails-workflow
 
 Simple workflow to collate useful information for the day ahead and email it to me.
 
+![screenshot of an email sent from this workflow](doc/sample-email.png)
+
+
 | who       | what |
 |-----------|------|
 | dockerhub | https://hub.docker.com/r/jspc/emails-workflow/   |
@@ -40,6 +43,7 @@ Workflow creation lives in `script/wf.go` and relies on two env vars being set:
 ```bash
 $ export SENDER_ADDRESS=me@example.com            # From address on email
 $ export RECEIPIENT_ADDRESS=someone@example.com   # To address on email
+$ export GUARDIAN_API_KEY=jsjsjsjsjs              # A valid api key for the guardian API
 ```
 
 It *can* be compiled and run:
